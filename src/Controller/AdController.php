@@ -33,21 +33,16 @@ class AdController extends AbstractController
     {
         $ad = new Ad();
 
-        $image = new Image();
-        $image->setUrl('http://placehold.it/400x200')
-            ->setCaption('Titre 1');
-        $image2 = new Image();
-        $image2->setUrl('http://placehold.it/400x200')
-            ->setCaption('Titre 2');
-
-        $ad->addImage($image)
-            ->addImage($image2);
-
         $form = $this->createForm(AdType::class, $ad);
 
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            foreach ($ad->getImages() as $image) {
+                $image->setAd($ad);
+                $manager->persist($image);
+            }
+
             $manager->persist($ad);
             $manager->flush();
 
@@ -63,6 +58,40 @@ class AdController extends AbstractController
 
         return $this->render('ad/new.html.twig', [
             'form' => $form->createView()
+        ]);
+    }
+
+    /**
+     * @Route("/ads/{slug}/edit", name="ads_edit")
+     */
+    public function edit(Ad $ad, Request $request, EntityManagerInterface $manager)
+    {
+        $form = $this->createForm(AdType::class, $ad);
+
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            foreach ($ad->getImages() as $image) {
+                $image->setAd($ad);
+                $manager->persist($image);
+            }
+
+            $manager->persist($ad);
+            $manager->flush();
+
+            $this->addFlash(
+                'success',
+                "Les modifications de l'annonce <strong>{$ad->getTitle()}</strong> ont bien été enregistrées ! "
+            );
+
+            return $this->redirectToRoute("ads_show", [
+                'slug' => $ad->getSlug()
+            ]);
+        }
+
+        return $this->render('ad/edit.html.twig', [
+            'form' => $form->createView(),
+            'ad' => $ad
         ]);
     }
 
