@@ -3,12 +3,14 @@
 namespace App\Controller;
 
 use App\Entity\Ad;
-use App\Entity\Image;
 use App\Form\AdType;
+use App\Entity\Image;
 use App\Repository\AdRepository;
-use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class AdController extends AbstractController
@@ -28,6 +30,7 @@ class AdController extends AbstractController
 
     /**
      * @Route("/ads/new", name="ads_create")
+     * @IsGranted("ROLE_USER")
      */
     public function create(Request $request, EntityManagerInterface $manager)
     {
@@ -65,6 +68,7 @@ class AdController extends AbstractController
 
     /**
      * @Route("/ads/{slug}/edit", name="ads_edit")
+     * @Security("is_granted('ROLE_USER') and user === ad.getAuthor()")
      */
     public function edit(Ad $ad, Request $request, EntityManagerInterface $manager)
     {
@@ -105,5 +109,21 @@ class AdController extends AbstractController
         return $this->render('ad/show.html.twig', [
             'ad' => $ad
         ]);
+    }
+
+    /**
+     * @Route("/ads/{slug}/delete", name="ads_delete")
+     * @Security("is_granted('ROLE_USER') and user == ad.getAuthor()")
+     */
+    public function delete(Ad $ad, EntityManagerInterface $em){
+        $em->remove($ad);
+        $em->flush();
+
+        $this->addFlash(
+            'success',
+            "L'annonce <strong>{$ad->getTitle()}</strong>à bien été supprimée !"
+        );
+
+        return $this->redirectToRoute('ads_index');
     }
 }
