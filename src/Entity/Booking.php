@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+
 /**
  * @ORM\Entity(repositoryClass="App\Repository\BookingRepository")
  * @ORM\HasLifecycleCallbacks
@@ -31,7 +32,7 @@ class Booking
 
     /**
      * @ORM\Column(type="datetime"))
-     * @Assert\GreaterThan("today", message="La date d'arrivée doit etre superieure à la date d'aujourd'hui")
+     * @Assert\GreaterThan("today", message="La date d'arrivée doit etre superieure à la date d'aujourd'hui", groups={"front"})
      */
     private $startDate;
 
@@ -58,23 +59,26 @@ class Booking
 
     /**
      * @ORM\PrePersist
+     * @ORM\PreUpdate
      */
-    public function prePersist(){
-        if(empty($this->createdAt)){
+    public function prePersist()
+    {
+        if (empty($this->createdAt)) {
             $this->createdAt = new \DateTime();
         }
 
-        if(empty($this->amount)){
+        if (empty($this->amount)) {
             $this->amount = $this->ad->getPrice() * $this->getDuration();
         }
     }
 
-    public function isBookableDates(){
+    public function isBookableDates()
+    {
         $notAvailableDays = $this->ad->getNotAvailableDays();
 
         $bookingDays = $this->getDays();
 
-        $formatDay = function($day){
+        $formatDay = function ($day) {
             return $day->format('Y-m-d');
         };
 
@@ -83,28 +87,29 @@ class Booking
         $notAvailable = array_map($formatDay, $notAvailableDays);
 
         foreach ($days as $day) {
-            if(array_search($day, $notAvailable) !== false) return false;
+            if (array_search($day, $notAvailable) !== false) return false;
         }
 
         return true;
-
     }
 
-    public function getDays(){
+    public function getDays()
+    {
         $result = range(
             $this->startDate->getTimestamp(),
             $this->endDate->getTimestamp(),
             24 * 60 * 60
         );
 
-        $days = array_map(function($dayTimestamp){
+        $days = array_map(function ($dayTimestamp) {
             return new \DateTime(date('Y-m-d', $dayTimestamp));
-        }, $result);        
+        }, $result);
 
         return $days;
     }
 
-    public function getDuration(){
+    public function getDuration()
+    {
         $diff = $this->endDate->diff($this->startDate);
         return $diff->days;
     }

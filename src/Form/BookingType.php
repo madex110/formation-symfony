@@ -14,9 +14,9 @@ class BookingType extends ApplicationType
 {
     private $transformer;
 
-    public function __construct(FrenchToDateTimeTransformer $transformer){
+    public function __construct(FrenchToDateTimeTransformer $transformer)
+    {
         $this->transformer = $transformer;
-
     }
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -33,6 +33,10 @@ class BookingType extends ApplicationType
     {
         $resolver->setDefaults([
             'data_class' => Booking::class,
+            'validation_groups' => [
+                'Default',
+                'front'
+            ]
         ]);
     }
 }
